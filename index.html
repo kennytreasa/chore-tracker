@@ -366,11 +366,7 @@ function renderTabs(){
   settingsBtn.onclick = ()=>switchTab('settings');
   bar.appendChild(settingsBtn);
 
-  const promptBtn = document.createElement('button');
-  promptBtn.className = 'tab-btn' + (activeTab==='prompt' ? ' active':'');
-  promptBtn.innerHTML = `<span class="emo">📋</span> Prompt`;
-  promptBtn.onclick = ()=>switchTab('prompt');
-  bar.appendChild(promptBtn);
+
 }
 
 function switchTab(tab){
