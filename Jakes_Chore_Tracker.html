@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jake's Chores">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#6C4FF5">
+<title>Jake's Chore Tracker</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236C4FF5'/%3E%3Ctext x='50' y='66' font-size='55' text-anchor='middle' fill='white'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --purple:#6C4FF5;
+    --purple-dark:#4B2FD6;
+    --pink:#FF5DA2;
+    --orange:#FF8A3D;
+    --yellow:#FFC94D;
+    --green:#3DDC97;
+    --teal:#2FC4D6;
+    --bg:#FAF6FF;
+    --card:#FFFFFF;
+    --ink:#2A1F4D;
+    --ink-soft:#6B5E91;
+    --line:#ECE5FB;
+    --radius:22px;
+    --shadow:0 10px 24px rgba(108,79,245,0.14);
+    font-family:'Baloo 2','Segoe UI Rounded',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);min-height:100vh;}
+  body{
+    padding-bottom:env(safe-area-inset-bottom);
+    overflow-x:hidden;
+  }
+  h1,h2,h3{margin:0;font-weight:800;}
+  button{font-family:inherit;border:none;cursor:pointer;}
+  input{font-family:inherit;}
+
+  /* Top bar */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 16px 8px 16px;
+    gap:10px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+  }
+  .brand-emoji{font-size:30px;}
+  .brand h1{
+    font-size:20px; line-height:1.05;
+    background:linear-gradient(90deg,var(--purple),var(--pink));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .brand small{display:block; color:var(--ink-soft); font-weight:600; font-size:11px; letter-spacing:.02em;}
+
+  /* Tabs */
+  .tabbar{
+    display:flex; gap:8px; padding:6px 12px 14px 12px; overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .tabbar::-webkit-scrollbar{display:none;}
+  .tab-btn{
+    flex:0 0 auto;
+    padding:10px 18px; border-radius:999px; font-weight:800; font-size:14px;
+    background:var(--card); color:var(--ink-soft); border:2px solid var(--line);
+    display:flex; align-items:center; gap:6px;
+    transition:transform .15s ease;
+  }
+  .tab-btn.active{
+    background:linear-gradient(135deg,var(--purple),var(--pink));
+    color:white; border-color:transparent; box-shadow:var(--shadow);
+    transform:translateY(-1px);
+  }
+  .tab-btn .emo{font-size:16px;}
+
+  main{padding:0 14px 40px 14px; max-width:680px; margin:0 auto;}
+  .page{display:none; animation:fadeIn .25s ease;}
+  .page.active{display:block;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  /* Points header */
+  .points-card{
+    background:linear-gradient(135deg,var(--purple) 0%, var(--pink) 100%);
+    border-radius:28px; padding:22px 22px 24px 22px; color:white; margin-bottom:18px;
+    box-shadow:0 14px 30px rgba(108,79,245,0.28);
+    position:relative; overflow:hidden;
+  }
+  .points-card::after{
+    content:''; position:absolute; right:-30px; top:-30px; width:140px; height:140px;
+    background:rgba(255,255,255,0.12); border-radius:50%;
+  }
+  .points-card .kid-name{font-size:16px; font-weight:700; opacity:.92;}
+  .points-card .points-val{font-size:54px; font-weight:900; line-height:1.05; margin-top:2px;}
+  .points-card .points-label{font-size:13px; font-weight:700; opacity:.85; letter-spacing:.03em;}
+  .progress-emoji{position:absolute; right:18px; bottom:14px; font-size:40px; opacity:.9;}
+
+  /* Manual adjust */
+  .adjust-row{
+    display:flex; gap:8px; margin-bottom:18px; background:var(--card);
+    border-radius:18px; padding:10px; box-shadow:var(--shadow); border:1px solid var(--line);
+  }
+  .adjust-row input{
+    flex:1; border:2px solid var(--line); border-radius:12px; padding:10px 12px;
+    font-size:16px; font-weight:700; color:var(--ink); min-width:0;
+  }
+  .adjust-row input:focus{outline:none; border-color:var(--purple);}
+  .adjust-row button{
+    background:linear-gradient(135deg,var(--teal),var(--green));
+    color:white; font-weight:800; padding:10px 18px; border-radius:12px; font-size:14px;
+    flex-shrink:0;
+  }
+  .adjust-row button:active{transform:scale(.96);}
+
+  .section-title{
+    font-size:15px; font-weight:800; color:var(--ink-soft); margin:18px 4px 10px 4px;
+    letter-spacing:.02em; text-transform:uppercase;
+  }
+
+  /* Chore cards */
+  .chore-grid{display:flex; flex-direction:column; gap:10px;}
+  .chore-card{
+    background:var(--card); border-radius:18px; padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    box-shadow:var(--shadow); border:2px solid transparent;
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  .chore-card:active{transform:scale(.985);}
+  .chore-card.done{border-color:var(--green); background:#F2FFF8;}
+  .chore-left{display:flex; align-items:center; gap:12px; min-width:0;}
+  .chore-emoji{
+    font-size:26px; width:44px; height:44px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    background:var(--bg);
+  }
+  .chore-info{min-width:0;}
+  .chore-name{font-weight:800; font-size:15px; color:var(--ink); word-break:break-word;}
+  .chore-pts{font-weight:700; font-size:12px; color:var(--ink-soft);}
+  .switch{
+    position:relative; width:52px; height:30px; border-radius:999px; flex-shrink:0;
+    background:#E3DCFB; transition:background .2s ease;
+  }
+  .switch.on{background:linear-gradient(135deg,var(--green),var(--teal));}
+  .switch .knob{
+    position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%;
+    background:white; box-shadow:0 2px 5px rgba(0,0,0,.2); transition:left .2s ease;
+  }
+  .switch.on .knob{left:25px;}
+
+  .reset-today-row{margin-top:20px; display:flex; justify-content:center;}
+  .reset-today-btn{
+    background:var(--card); color:var(--ink-soft); font-weight:700; font-size:13px;
+    padding:10px 18px; border-radius:999px; border:2px dashed var(--line);
+  }
+  .reset-today-btn:active{transform:scale(.96);}
+
+  /* Settings */
+  .settings-block{
+    background:var(--card); border-radius:18px; padding:16px; margin-bottom:16px;
+    box-shadow:var(--shadow); border:1px solid var(--line);
+  }
+  .settings-block h3{font-size:15px; margin-bottom:12px; color:var(--purple-dark); display:flex; align-items:center; gap:6px;}
+  .name-row{display:flex; gap:8px; margin-bottom:10px;}
+  .name-row label{flex:0 0 90px; font-weight:700; font-size:13px; color:var(--ink-soft); align-self:center;}
+  .name-row input{flex:1; border:2px solid var(--line); border-radius:10px; padding:9px 10px; font-size:14px; font-weight:700; min-width:0;}
+
+  .item-row{
+    display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line);
+  }
+  .item-row:last-child{border-bottom:none;}
+  .item-row input[type=text]{flex:1.6; border:2px solid var(--line); border-radius:10px; padding:8px 10px; font-size:13px; font-weight:700; min-width:0;}
+  .item-row input[type=number]{flex:0.8; border:2px solid var(--line); border-radius:10px; padding:8px 8px; font-size:13px; font-weight:700; min-width:0; width:70px;}
+  .icon-btn{
+    width:34px; height:34px; border-radius:10px; flex-shrink:0; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn.save{background:var(--green); color:white;}
+  .icon-btn.del{background:#FFE3E8; color:#E0335B;}
+  .icon-btn:active{transform:scale(.92);}
+
+  .add-row{display:flex; gap:8px; margin-top:8px;}
+  .add-row input[type=text]{flex:1.6;}
+  .add-row input[type=number]{flex:0.8; width:70px;}
+  .add-btn{
+    background:linear-gradient(135deg,var(--purple),var(--pink)); color:white; font-weight:800;
+    border-radius:10px; padding:8px 14px; font-size:13px; flex-shrink:0;
+  }
+  .add-btn:active{transform:scale(.95);}
+
+  .danger-btn{
+    width:100%; background:#FFE3E8; color:#E0335B; font-weight:800; padding:13px;
+    border-radius:14px; font-size:14px; margin-top:4px;
+  }
+  .danger-btn:active{transform:scale(.97);}
+
+  /* Prompt tab */
+  .prompt-card{
+    background:var(--card); border-radius:18px; padding:18px; box-shadow:var(--shadow);
+    border:1px solid var(--line);
+  }
+  .prompt-card h2{font-size:18px; color:var(--purple-dark); margin-bottom:4px;}
+  .prompt-card p.sub{color:var(--ink-soft); font-size:13px; margin-bottom:14px;}
+  .prompt-section{margin-bottom:16px;}
+  .prompt-section h4{
+    font-size:13px; text-transform:uppercase; letter-spacing:.03em; color:var(--purple);
+    margin-bottom:6px; font-weight:800;
+  }
+  .prompt-section ul{margin:0; padding-left:20px;}
+  .prompt-section li{font-size:13.5px; line-height:1.55; color:var(--ink); margin-bottom:3px;}
+  .prompt-title-line{font-size:14px; font-weight:800; color:var(--ink); margin-bottom:6px;}
+  .copy-btn{
+    background:linear-gradient(135deg,var(--teal),var(--green)); color:white; font-weight:800;
+    padding:10px 16px; border-radius:12px; font-size:13px; margin-bottom:14px;
+  }
+  .copy-btn:active{transform:scale(.96);}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:white; padding:10px 18px; border-radius:999px; font-weight:700;
+    font-size:13px; opacity:0; transition:all .25s ease; pointer-events:none; z-index:999;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* Modal */
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(42,31,77,0.45); display:none;
+    align-items:center; justify-content:center; z-index:1000; padding:20px;
+  }
+  .modal-bg.show{display:flex;}
+  .modal-box{
+    background:white; border-radius:20px; padding:22px; max-width:320px; width:100%;
+    box-shadow:0 20px 50px rgba(0,0,0,.3); text-align:center;
+  }
+  .modal-box h3{font-size:17px; margin-bottom:8px;}
+  .modal-box p{font-size:13.5px; color:var(--ink-soft); margin-bottom:18px; line-height:1.5;}
+  .modal-actions{display:flex; gap:10px;}
+  .modal-actions button{flex:1; padding:11px; border-radius:12px; font-weight:800; font-size:14px;}
+  .modal-cancel{background:var(--line); color:var(--ink-soft);}
+  .modal-confirm{background:#E0335B; color:white;}
+
+  footer.app-footer{text-align:center; color:var(--ink-soft); font-size:11px; padding:10px 0 26px 0; opacity:.6;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-emoji">🏆</div>
+    <div>
+      <h1>Jake's Chores</h1>
+      <small>CHORE TRACKER</small>
+    </div>
+  </div>
+</div>
+
+<div class="tabbar" id="tabbar"></div>
+
+<main>
+  <!-- Kid page gets injected here -->
+  <div id="kid-pages"></div>
+
+  <!-- Settings page -->
+  <div class="page" id="page-settings">
+    <h2 class="section-title" style="margin-top:4px;">👤 Kid Name</h2>
+    <div class="settings-block">
+      <div class="name-row"><label>Name</label><input type="text" id="name-input-0"></div>
+      <button class="add-btn" style="width:100%;" onclick="saveNames()">Save Name</button>
+    </div>
+
+    <h2 class="section-title">🧹 Chores</h2>
+    <div class="settings-block" id="chores-settings-block"></div>
+
+    <h2 class="section-title">⚠️ Penalties</h2>
+    <div class="settings-block" id="penalties-settings-block"></div>
+
+    <h2 class="section-title">🗑️ Reset</h2>
+    <div class="settings-block">
+      <p style="font-size:13px; color:var(--ink-soft); margin-bottom:10px; line-height:1.5;">This wipes <b>everything</b> — total points and all toggles back to zero. Chores, penalties and name stay the same. This can't be undone.</p>
+      <button class="danger-btn" onclick="confirmTotalReset()">Total Reset</button>
+    </div>
+  </div>
+
+  <!-- Prompt page -->
+  <div class="page" id="page-prompt">
+    <div class="prompt-card">
+      <h2>📋 The Build Prompt</h2>
+      <p class="sub">Copy this and hand it to your favorite AI to recreate (or remix) this app.</p>
+      <button class="copy-btn" onclick="copyPrompt()">📎 Copy Prompt to Clipboard</button>
+
+      <div id="prompt-render"></div>
+    </div>
+  </div>
+</main>
+
+<footer class="app-footer">Made with 💜 for Jake</footer>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal-box">
+    <h3 id="modal-title">Are you sure?</h3>
+    <p id="modal-text"></p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" id="modal-confirm-btn">Yes, do it</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- DATA LAYER ---------------- */
+const STORAGE_KEY = 'jakesChoreTracker_v1';
+
+const DEFAULT_CHORES = [
+  {id:'c1', name:'Make bed', pts:5, emoji:'🛏️'},
+  {id:'c2', name:'Help with dishes', pts:5, emoji:'🍽️'},
+  {id:'c3', name:'Practice', pts:10, emoji:'🎵'},
+  {id:'c4', name:'Exercise/Play outdoors', pts:10, emoji:'⚽'},
+  {id:'c5', name:'Tidy room', pts:10, emoji:'🧸'},
+  {id:'c6', name:'Cleanup after eating', pts:5, emoji:'🧽'},
+  {id:'c7', name:'Help cleaning living room', pts:10, emoji:'🛋️'},
+  {id:'c8', name:'Piano', pts:15, emoji:'🎹'},
+];
+
+const DEFAULT_PENALTIES = [
+  {id:'p1', name:'Not eating vegetables/fruits', pts:-10},
+  {id:'p2', name:'Too much screen time', pts:-20},
+];
+
+function defaultState(){
+  return {
+    kids: [
+      {name:'Jake', points:0, today:{}}
+    ],
+    chores: JSON.parse(JSON.stringify(DEFAULT_CHORES)),
+    penalties: JSON.parse(JSON.stringify(DEFAULT_PENALTIES))
+  };
+}
+
+let state;
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    if(!parsed.kids || !parsed.chores) return defaultState();
+    if(!parsed.penalties) parsed.penalties = JSON.parse(JSON.stringify(DEFAULT_PENALTIES));
+    parsed.kids.forEach(k=>{ if(!k.today) k.today = {}; if(typeof k.points!=='number') k.points=0; });
+    return parsed;
+  }catch(e){ return defaultState(); }
+}
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+state = loadState();
+
+/* ---------------- TABS ---------------- */
+const EMOJIS = ['🦸'];
+let activeTab = 'kid0';
+
+function renderTabs(){
+  const bar = document.getElementById('tabbar');
+  bar.innerHTML = '';
+  state.kids.forEach((kid,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (activeTab==='kid'+i ? ' active':'');
+    btn.innerHTML = `<span class="emo">${EMOJIS[i]||'⭐'}</span> ${escapeHtml(kid.name)}`;
+    btn.onclick = ()=>switchTab('kid'+i);
+    bar.appendChild(btn);
+  });
+  const settingsBtn = document.createElement('button');
+  settingsBtn.className = 'tab-btn' + (activeTab==='settings' ? ' active':'');
+  settingsBtn.innerHTML = `<span class="emo">⚙️</span> Settings`;
+  settingsBtn.onclick = ()=>switchTab('settings');
+  bar.appendChild(settingsBtn);
+
+  const promptBtn = document.createElement('button');
+  promptBtn.className = 'tab-btn' + (activeTab==='prompt' ? ' active':'');
+  promptBtn.innerHTML = `<span class="emo">📋</span> Prompt`;
+  promptBtn.onclick = ()=>switchTab('prompt');
+  bar.appendChild(promptBtn);
+}
+
+function switchTab(tab){
+  activeTab = tab;
+  renderTabs();
+  renderAll();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---------------- KID PAGES ---------------- */
+function renderKidPages(){
+  const container = document.getElementById('kid-pages');
+  container.innerHTML = '';
+  state.kids.forEach((kid,i)=>{
+    const page = document.createElement('div');
+    page.className = 'page' + (activeTab==='kid'+i ? ' active':'');
+    page.id = 'page-kid'+i;
+
+    const progEmoji = kid.points>=100?'🏆':kid.points>=50?'🌟':kid.points>=20?'✨':'💪';
+
+    page.innerHTML = `
+      <div class="points-card">
+        <div class="kid-name">${escapeHtml(kid.name)}'s Points</div>
+        <div class="points-val">${kid.points}</div>
+        <div class="points-label">TOTAL POINTS EARNED</div>
+        <div class="progress-emoji">${progEmoji}</div>
+      </div>
+
+      <div class="adjust-row">
+        <input type="number" id="adjust-input-${i}" placeholder="e.g. 5 or -5">
+        <button onclick="applyAdjust(${i})">Apply</button>
+      </div>
+
+      <div class="section-title">Today's Chores</div>
+      <div class="chore-grid" id="chore-grid-${i}"></div>
+
+      <div class="reset-today-row">
+        <button class="reset-today-btn" onclick="confirmResetToday(${i})">↺ Reset Today's Switches</button>
+      </div>
+    `;
+    container.appendChild(page);
+
+    const grid = page.querySelector(`#chore-grid-${i}`);
+    state.chores.forEach(chore=>{
+      const on = !!kid.today[chore.id];
+      const card = document.createElement('div');
+      card.className = 'chore-card' + (on ? ' done':'');
+      card.onclick = ()=>toggleChore(i, chore.id);
+      card.innerHTML = `
+        <div class="chore-left">
+          <div class="chore-emoji">${chore.emoji||'⭐'}</div>
+          <div class="chore-info">
+            <div class="chore-name">${escapeHtml(chore.name)}</div>
+            <div class="chore-pts">${chore.pts} pts</div>
+          </div>
+        </div>
+        <div class="switch ${on?'on':''}"><div class="knob"></div></div>
+      `;
+      grid.appendChild(card);
+    });
+  });
+}
+
+function toggleChore(kidIndex, choreId){
+  const kid = state.kids[kidIndex];
+  const chore = state.chores.find(c=>c.id===choreId);
+  if(!chore) return;
+  const isOn = !!kid.today[choreId];
+  if(isOn){
+    kid.today[choreId] = false;
+    kid.points -= chore.pts;
+  } else {
+    kid.today[choreId] = true;
+    kid.points += chore.pts;
+  }
+  saveState();
+  renderKidPages();
+  switchActiveOnly();
+}
+
+function applyAdjust(kidIndex){
+  const input = document.getElementById('adjust-input-'+kidIndex);
+  const val = parseInt(input.value, 10);
+  if(isNaN(val) || val===0){ showToast('Enter a number first'); return; }
+  state.kids[kidIndex].points += val;
+  input.value='';
+  saveState();
+  renderKidPages();
+  switchActiveOnly();
+  showToast((val>0?'+':'')+val+' points applied!');
+}
+
+function confirmResetToday(kidIndex){
+  openModal('Reset today\'s switches?', `This clears all of ${escapeHtml(state.kids[kidIndex].name)}'s chore toggles for today without touching their total points.`, ()=>{
+    state.kids[kidIndex].today = {};
+    saveState();
+    renderKidPages();
+    switchActiveOnly();
+    showToast('Today\'s switches reset!');
+  }, 'Reset');
+}
+
+/* keep correct active page visible after re-render */
+function switchActiveOnly(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const id = activeTab.startsWith('kid') ? 'page-'+activeTab : 'page-'+activeTab;
+  const el = document.getElementById(id);
+  if(el) el.classList.add('active');
+}
+
+/* ---------------- SETTINGS ---------------- */
+function renderSettings(){
+  document.getElementById('name-input-0').value = state.kids[0].name;
+
+  // chores
+  const cBlock = document.getElementById('chores-settings-block');
+  cBlock.innerHTML = '';
+  state.chores.forEach(chore=>{
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <input type="text" value="${escapeAttr(chore.name)}" onchange="updateChoreField('${chore.id}','name',this.value)">
+      <input type="number" value="${chore.pts}" onchange="updateChoreField('${chore.id}','pts',this.value)">
+      <button class="icon-btn del" onclick="deleteChore('${chore.id}')">🗑️</button>
+    `;
+    cBlock.appendChild(row);
+  });
+  const addChoreRow = document.createElement('div');
+  addChoreRow.className = 'add-row';
+  addChoreRow.innerHTML = `
+    <input type="text" id="new-chore-name" placeholder="New chore name">
+    <input type="number" id="new-chore-pts" placeholder="pts">
+    <button class="add-btn" onclick="addChore()">+ Add</button>
+  `;
+  cBlock.appendChild(addChoreRow);
+
+  // penalties
+  const pBlock = document.getElementById('penalties-settings-block');
+  pBlock.innerHTML = '';
+  state.penalties.forEach(pen=>{
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <input type="text" value="${escapeAttr(pen.name)}" onchange="updatePenaltyField('${pen.id}','name',this.value)">
+      <input type="number" value="${pen.pts}" onchange="updatePenaltyField('${pen.id}','pts',this.value)">
+      <button class="icon-btn del" onclick="deletePenalty('${pen.id}')">🗑️</button>
+    `;
+    pBlock.appendChild(row);
+  });
+  const addPenRow = document.createElement('div');
+  addPenRow.className = 'add-row';
+  addPenRow.innerHTML = `
+    <input type="text" id="new-pen-name" placeholder="New penalty name">
+    <input type="number" id="new-pen-pts" placeholder="-pts">
+    <button class="add-btn" onclick="addPenalty()">+ Add</button>
+  `;
+  pBlock.appendChild(addPenRow);
+}
+
+function saveNames(){
+  const n0 = document.getElementById('name-input-0').value.trim();
+  state.kids[0].name = n0 || 'Jake';
+  saveState();
+  renderTabs();
+  renderKidPages();
+  switchActiveOnly();
+  showToast('Name updated!');
+}
+
+function updateChoreField(id, field, value){
+  const chore = state.chores.find(c=>c.id===id);
+  if(!chore) return;
+  if(field==='pts'){
+    chore.pts = parseInt(value,10) || 0;
+  } else {
+    chore.name = value;
+  }
+  saveState();
+  renderKidPages();
+  switchActiveOnly();
+}
+
+function deleteChore(id){
+  openModal('Delete this chore?', 'This removes it from the dashboard. Existing earned points are not affected.', ()=>{
+    state.chores = state.chores.filter(c=>c.id!==id);
+    state.kids.forEach(k=>{ delete k.today[id]; });
+    saveState();
+    renderSettings();
+    renderKidPages();
+    switchActiveOnly();
+    showToast('Chore deleted');
+  }, 'Delete');
+}
+
+function addChore(){
+  const nameInput = document.getElementById('new-chore-name');
+  const ptsInput = document.getElementById('new-chore-pts');
+  const name = nameInput.value.trim();
+  const pts = parseInt(ptsInput.value,10);
+  if(!name || isNaN(pts)){ showToast('Add a name and points'); return; }
+  const id = 'c'+Date.now();
+  const emojiPool = ['⭐','🌈','🎯','🧺','🚀','🐾','🎨','🧴','🪥','🧦'];
+  const emoji = emojiPool[state.chores.length % emojiPool.length];
+  state.chores.push({id, name, pts, emoji});
+  saveState();
+  renderSettings();
+  renderKidPages();
+  switchActiveOnly();
+  showToast('Chore added!');
+}
+
+function updatePenaltyField(id, field, value){
+  const pen = state.penalties.find(p=>p.id===id);
+  if(!pen) return;
+  if(field==='pts'){
+    pen.pts = parseInt(value,10) || 0;
+  } else {
+    pen.name = value;
+  }
+  saveState();
+}
+
+function deletePenalty(id){
+  openModal('Delete this penalty?', 'This removes it from the penalties list.', ()=>{
+    state.penalties = state.penalties.filter(p=>p.id!==id);
+    saveState();
+    renderSettings();
+    showToast('Penalty deleted');
+  }, 'Delete');
+}
+
+function addPenalty(){
+  const nameInput = document.getElementById('new-pen-name');
+  const ptsInput = document.getElementById('new-pen-pts');
+  const name = nameInput.value.trim();
+  let pts = parseInt(ptsInput.value,10);
+  if(!name || isNaN(pts)){ showToast('Add a name and points'); return; }
+  if(pts > 0) pts = -pts; // penalties are negative
+  const id = 'p'+Date.now();
+  state.penalties.push({id, name, pts});
+  saveState();
+  renderSettings();
+  showToast('Penalty added!');
+}
+
+function confirmTotalReset(){
+  openModal('Total Reset — are you sure?', 'This wipes total points and today\'s toggles back to zero. This cannot be undone.', ()=>{
+    state.kids.forEach(k=>{ k.points=0; k.today={}; });
+    saveState();
+    renderKidPages();
+    switchActiveOnly();
+    showToast('Everything reset!');
+  }, 'Reset Everything');
+}
+
+/* ---------------- MODAL ---------------- */
+let modalCallback = null;
+function openModal(title, text, onConfirm, confirmLabel){
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-text').textContent = text;
+  const btn = document.getElementById('modal-confirm-btn');
+  btn.textContent = confirmLabel || 'Yes, do it';
+  modalCallback = onConfirm;
+  document.getElementById('modal-bg').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('modal-bg').classList.remove('show');
+  modalCallback = null;
+}
+document.getElementById('modal-confirm-btn').onclick = ()=>{
+  if(modalCallback) modalCallback();
+  closeModal();
+};
+document.getElementById('modal-bg').onclick = (e)=>{
+  if(e.target.id==='modal-bg') closeModal();
+};
+
+/* ---------------- TOAST ---------------- */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ---------------- HELPERS ---------------- */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(str){ return escapeHtml(str); }
+
+/* ---------------- PAGE SWITCH RENDER ---------------- */
+function renderAll(){
+  renderKidPages();
+  renderSettings();
+  document.getElementById('page-settings').classList.toggle('active', activeTab==='settings');
+  document.getElementById('page-prompt').classList.toggle('active', activeTab==='prompt');
+  switchActiveOnly();
+}
+
+/* ---------------- PROMPT TAB CONTENT ---------------- */
+const PROMPT_TEXT = `Build a colorful chore and task tracking app for a kid as a single downloadable HTML file that works as a web app on android phone/ipad (saved to home screen via any browser). Name it "Jake's Chore Tracker".
+Next to the Settings button, add a tab named "Prompt" where the below prompt is pasted and nicely formatted - for anyone who wants to recreate the app using this prompt.
+
+Layout & Design
+- A kid dashboard as a tab at the top
+- Tab label should show the kid's actual name (customizable)
+- Theme with bright, colorful kid-friendly design
+- Each chore displayed as a colorful card with a toggle switch
+- Cumulative points displayed at the top of the kid's dashboard
+
+Chores & Points
+- Default starter chores: Make bed (5pts), Help with dishes (5pts), Practice (10pts), Exercise/Play outdoors (10pts), Tidy room (10pts), Cleanup after eating (5pts), Help cleaning living room (10pts), Piano (15pts)
+- Tapping a chore card toggles it on/off and adds/deducts points accordingly
+- A manual point adjustment field on the kid's page — type any positive or negative number and tap Apply to instantly update their total
+
+Penalties
+- A separate Penalties section in Settings where you can add negative-point items if needed (e.g. not eating vegetables/fruits -10 pts, too much screen time -20 pts)
+
+Settings Panel
+- Rename the kid (name updates everywhere including the tab)
+- Add, edit, and delete chores with custom names and point values
+- Add, edit, and delete penalty items with custom names and point values
+- Total Reset should happen only with confirmation
+- A separate "Reset today's switches" button on the kid's dashboard that clears daily toggles without wiping cumulative points
+
+Technical Requirements
+- Single self-contained HTML file, no external dependencies
+- Uses localStorage to persist all data (points, name, chores, today's switches) between sessions
+- Includes apple-mobile-web-app-capable meta tags so it works cleanly when added to iPad home screen`;
+
+function renderPromptTab(){
+  const el = document.getElementById('prompt-render');
+  el.innerHTML = `
+    <div class="prompt-title-line">Build a colorful chore and task tracking app for a kid as a single downloadable HTML file that works as a web app on android phone/ipad (saved to home screen via any browser). Name it "Jake's Chore Tracker".</div>
+    <p style="font-size:13.5px; line-height:1.55; color:var(--ink); margin-bottom:14px;">
+      Next to the Settings button, add a tab named "Prompt" where this prompt is pasted and nicely formatted — for anyone who wants to recreate the app using this prompt.
+    </p>
+
+    <div class="prompt-section">
+      <h4>🎨 Layout &amp; Design</h4>
+      <ul>
+        <li>A kid dashboard as a tab at the top</li>
+        <li>Tab label should show the kid's actual name (customizable)</li>
+        <li>Theme with bright, colorful kid-friendly design</li>
+        <li>Each chore displayed as a colorful card with a toggle switch</li>
+        <li>Cumulative points displayed at the top of the kid's dashboard</li>
+      </ul>
+    </div>
+
+    <div class="prompt-section">
+      <h4>✅ Chores &amp; Points</h4>
+      <ul>
+        <li>Default starter chores: Make bed (5pts), Help with dishes (5pts), Practice (10pts), Exercise/Play outdoors (10pts), Tidy room (10pts), Cleanup after eating (5pts), Help cleaning living room (10pts), Piano (15pts)</li>
+        <li>Tapping a chore card toggles it on/off and adds/deducts points accordingly</li>
+        <li>A manual point adjustment field on the kid's page — type any positive or negative number and tap Apply to instantly update their total</li>
+      </ul>
+    </div>
+
+    <div class="prompt-section">
+      <h4>⚠️ Penalties</h4>
+      <ul>
+        <li>A separate Penalties section in Settings where you can add negative-point items if needed (e.g. not eating vegetables/fruits -10 pts, too much screen time -20 pts)</li>
+      </ul>
+    </div>
+
+    <div class="prompt-section">
+      <h4>⚙️ Settings Panel</h4>
+      <ul>
+        <li>Rename the kid (name updates everywhere including the tab)</li>
+        <li>Add, edit, and delete chores with custom names and point values</li>
+        <li>Add, edit, and delete penalty items with custom names and point values</li>
+        <li>Total Reset should happen only with confirmation</li>
+        <li>A separate "Reset today's switches" button on the kid's dashboard that clears daily toggles without wiping cumulative points</li>
+      </ul>
+    </div>
+
+    <div class="prompt-section">
+      <h4>🛠️ Technical Requirements</h4>
+      <ul>
+        <li>Single self-contained HTML file, no external dependencies</li>
+        <li>Uses localStorage to persist all data (points, name, chores, today's switches) between sessions</li>
+        <li>Includes apple-mobile-web-app-capable meta tags so it works cleanly when added to iPad home screen</li>
+      </ul>
+    </div>
+  `;
+}
+
+function copyPrompt(){
+  navigator.clipboard.writeText(PROMPT_TEXT).then(()=>{
+    showToast('Prompt copied to clipboard!');
+  }).catch(()=>{
+    showToast('Could not copy — long-press to select text manually');
+  });
+}
+
+/* ---------------- INIT ---------------- */
+function init(){
+  renderTabs();
+  renderAll();
+  renderPromptTab();
+}
+init();
+</script>
+</body>
+</html>
